@@ -1,5 +1,6 @@
-#include <SDL2/SDL.h>
-#include <iostream>
+#include <SDL2/SDL.h> //EL moto de bajo nivel
+#include <SDL2/SDL_image.h> //Sprites
+#include <iostream> //No me acuerdo
 #include <cmath> // Para las mates (sqrt, abs)
 
 using namespace std; // Pa no escribir std:: a cada rato
@@ -8,13 +9,48 @@ struct Player {
     float x, y;           // Estas variables son para la posición actual papu
     float vx, vy;         // Estas variables equivalen a la velocidad
     int w, h;             // Estas variables son el ancho y alto (del objeto)
+    SDL_Texture* texture; // Variable para guardar nuestra imagen
 };
+
+// SDL_IMAGE
+// Esta función carga una imagen y la convierte en textura
+SDL_Texture* loadTexture(string path, SDL_Renderer* renderer) {
+    SDL_Texture* newTexture = nullptr;
+
+    // Carga la imagen desde un archivo a la memoria (CPU)
+    SDL_Surface* loadedSurface = IMG_Load(path.c_str());
+    if (loadedSurface == nullptr) {
+        cerr << "Error al cargar imagen " << path << ": " << IMG_GetError() << endl;
+    } else {
+        // Convierte la imagen (Surface) a una textura (Texture)
+        // Esto la manda a la tarjeta gráfica (GPU), que es más rápido
+        newTexture = SDL_CreateTextureFromSurface(renderer, loadedSurface);
+        if (newTexture == nullptr) {
+            cerr << "Error al crear textura desde " << path << ": " << SDL_GetError() << endl;
+        }
+
+        // la liberamos
+        SDL_FreeSurface(loadedSurface);
+    }
+
+    return newTexture;
+}
+
 
     //Inicializa el sdl2, la verdad ni puta idea, pero todos los videos lo ponian, obviamente revisa si el sdl se inicio correctamente y si no que se detenga el programa,
     //pero la estructura esta algo complicada
 int main(int argc, char* argv[]) {
+    // Tenemos que inicializar SDL_VIDEO
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         cerr << "Error al inicializar SDL: " << SDL_GetError() << endl;
+        return 1;
+    }
+
+    // Ahora también inicializamos SDL_image (para los sprites)
+    int imgFlags = IMG_INIT_PNG;
+    if (!(IMG_Init(imgFlags) & imgFlags)) {
+        cerr << "Error al inicializar SDL_image: " << IMG_GetError() << endl;
+        SDL_Quit();
         return 1;
     }
 
@@ -24,7 +60,7 @@ int main(int argc, char* argv[]) {
 
     //El evento que crea la ventana donde se va a cargar el jueguito, y funciona asi: [Nombre, x , y , alto, ancho, y si se sobrepone o no]
     SDL_Window* window = SDL_CreateWindow(
-        "Uncanny Cat Golf - Motor v0.3 (¡Tiro!)",
+        "Uncanny Cat Golf", // <-- Título actualizado
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
         SCREEN_WIDTH,
@@ -35,6 +71,7 @@ int main(int argc, char* argv[]) {
     //Si no se abre la ventana por cualquier cosa que se pare el programa, para ver los errores cawn
     if (!window) {
         cerr << "Error al crear la ventana: " << SDL_GetError() << endl;
+        IMG_Quit(); // <-- Limpiamos SDL_image
         SDL_Quit();
         return 1;
     }
@@ -48,6 +85,7 @@ int main(int argc, char* argv[]) {
         // Si el pincel no se crea, tampoco podemos seguir
         cerr << "Error al crear el renderizador: " << SDL_GetError() << endl;
         SDL_DestroyWindow(window);
+        IMG_Quit(); // <-- Limpiamos SDL_image
         SDL_Quit();
         return 1;
     }
@@ -55,13 +93,25 @@ int main(int argc, char* argv[]) {
     // Aqui vamos a aplicar gestión de memoria, vease por el new, y aqui es donde le vamos a asignar las propiedades al futuro canny cat, estas son las variables que van
     // a estar cambiando usando las formulas que se van a ver mas abajo, pero inician con valores iniciales en este caso para que aparezca en el centro
     Player* g_player = new Player();
-    g_player->w = 40; //Ancho
-    g_player->h = 40; //Alto (estos valores se supone que no van a cambiar a menos que lo hagas aqui a mano)
+    g_player->w = 60; //Ancho 
+    g_player->h = 60; //Alto
     g_player->x = (SCREEN_WIDTH / 2.0f) - (g_player->w / 2.0f); //Posición x (centrado)
     g_player->y = (SCREEN_HEIGHT / 2.0f) - (g_player->h / 2.0f); // POsición y (centrado)
     g_player->vx = 0.0f; // Velocidad horizontal
     g_player->vy = 0.0f; // Velocidad vertical
+    
+    // Esta path es relativo al ejecutable (juego.exe)
+    // Las imagenes deben estar en la carpeta raiz (por si la quieres cambiar)
+    g_player->texture = loadTexture("cat.png", renderer);
+    if (g_player->texture == nullptr) {
+        cerr << "Error: No se pudo cargar la textura 'cat.png'. Asegúrate de que está en la carpeta LLG-UncannyGolf." << endl;
+        // Podríamos cerrar aquí, pero por ahora solo seguirá como un cuadrado invisible
+    }
 
+        SDL_Texture* g_backgroundTexture = loadTexture("fondo.png", renderer);
+    if (g_backgroundTexture == nullptr) {
+        cerr << "Error: No se pudo cargar 'fondo.png'. El fondo será gris." << endl;
+    }
 
     //El game loop, para que el juego continue el tiempo que requerimos, esto nos va a servir para poder finalizar el programa sin la necesidad de tener que presionar la x
     //Este apartado nos va a servir para finalizar el programa en ciertas ocasiones como cuando el uncanny cat nos toqué (no esta programada todavia)
@@ -86,7 +136,7 @@ int main(int argc, char* argv[]) {
     //Es un cout wei, solo que se va a escribir en la consola
     cout << "Motor iniciado. Haz clic y arrastra para disparar." << endl;
 
-    //Ahora si la chamba de los eventos, todos los eventos y funciones los vas a poder encontrar en SDL2-2.32.10\x86_64-w64-mingw32\include pero la neta para encontrarlos
+    //Ahora si la chamba de los eventos, todos los eventos y funciones los vas a poder encontrar en SDL2-2.32.10\x86_66-w64-mingw32\include pero la neta para encontrarlos
     //y ademas saber la estructura para usarlos mejor buscalo en google
 
     //Pues mientras que efectivamente el programa este funcionando proceda
@@ -113,12 +163,15 @@ int main(int argc, char* argv[]) {
             // Aqui va la Logica del tiro de golf
             
             // Esto seria lo que es el inicio del tiro, en el momento que hacen click
-            //ESTA FUNCIÓN CAMBIO PARA QUE SE PUEDA APUNTAR SOLO CUANDO LA "PELOTA ESTA QUIETA"
+            //Si el evento evaluado es "evento-hacer click" y es el click izquierdo
             if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
                 
+                // Se añade una comprobación para verificar que el jugador esté quieto
                 // (velocidad en X e Y sean 0) antes de permitir apuntar.
                 if (g_player->vx == 0.0f && g_player->vy == 0.0f) {
-                    // La pelota se detiene, quise hacerlo que siguiera avanzando o que no te dejara apuntar mientras se movia pero el juego se bugueaba bien feo (Ya lo pude corregir maldita sea)
+                    // La pelota se detiene, quise hacerlo que siguiera avanzando o que no te dejara apuntar mientras se movia pero el juego se bugueaba bien feo
+                    // g_player->vx = 0; // Estas líneas ya no son necesarias gracias a la comprobación
+                    // g_player->vy = 0;
                     
                     //Ponemos el "esta apuntando en true" y actualizamos los valores de la posición actual (recuerda que las variables de posicionamiento y del tiro son diferentes ver "g_player")
                     isAiming = true;
@@ -146,7 +199,7 @@ int main(int argc, char* argv[]) {
             if (event.type == SDL_MOUSEBUTTONUP && event.button.button == SDL_BUTTON_LEFT) {
                 // y estábamos apuntando
                 if (isAiming) {
-                    // se deja de apuntar, para evitar que se hagan tiros dobles o triples y ganen mas momentum (asi es el juego tiene momentum, se puede hacer bunny hop como el l4d2)
+                    // se deja de apuntar, para evitar que se hagan tiros doubles o triples y ganen mas momentum (asi es el juego tiene momentum, se puede hacer bunny hop como el l4d2)
                     isAiming = false;
                     
                     
@@ -177,7 +230,7 @@ int main(int argc, char* argv[]) {
             g_player->vx *= FRICTION;
             g_player->vy *= FRICTION;
 
-            // Este if hace que al sumar las velocidades de x Y y, si no suman cierta cantidad (en este caso 0.1(esto ya lo cambie a 2 para que se detenga mas rapido))
+            // Este if hace que al sumar las velocidades de x Y y, si no suman cierta cantidad (en este caso 0.1(esto lo cambie a 2 para que se detenga mas rapido))
             if (abs(g_player->vx) + abs(g_player->vy) < 2) {
                 // la detiene para evitar que se siga moviendo constantemente
                 g_player->vx = 0.0f;
@@ -209,17 +262,24 @@ int main(int argc, char* argv[]) {
         } // aca termina el if
         
         // Este apartado es la parte grafica, lo que se ve
-        
-        // Pintamos o "limpiamos la pantalla" con el renderer que declaramos al principio
-        // Le decimos al pincel (renderer) que use el color gris oscuro
-        SDL_SetRenderDrawColor(renderer, 30, 30, 30, 255); // Usa el formato R, G, B, A por si lo quieres cambiar
-        // pinta toda la ventana con ese color
-        SDL_RenderClear(renderer);
+        if (g_backgroundTexture) {
+            // Dibuja la textura de fondo para que cubra toda la pantalla
+            // El primer NULL = usa la textura completa
+            // El segundo NULL = estírala a toda la ventana
+            SDL_RenderCopy(renderer, g_backgroundTexture, NULL, NULL);
+        } else {
+            //Si no hay fondo que se use el gris por defecto (mas que nada para no borrar esta parte de codigo)
+            // Pintamos o "limpiamos la pantalla" con el renderer que declaramos al principio
+            // Le decimos al pincel (renderer) que use el color gris oscuro
+            SDL_SetRenderDrawColor(renderer, 30, 30, 30, 255); // Usa el formato R, G, B, A por si lo quieres cambiar
+            // pinta toda la ventana con ese color
+            SDL_RenderClear(renderer);
+        }
 
-        // Esto elige el color del que va a ser el cuadrado
-        // Cambiamos el color a color blanco
-        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
         
+
+
+
         // Creamos un rectángulo para dibujar. es una paja porque al parecer el sdl2 no se puede hacer circulos tan faciles como el cuadrado, pero eso luego lo cambiamos
         //Si no, la neta que asi quede, eso de agregar radio a las variables esta culeron
         // En el SDL no podemos usar floats pa dibujar, así que convertimos
@@ -230,8 +290,19 @@ int main(int argc, char* argv[]) {
             g_player->w,                  // ancho
             g_player->h                   // alto
         };
-        // rellena el cuadrado (la parte de arriba es solo los lados)
-        SDL_RenderFillRect(renderer, &renderRect);
+        
+        // En lugar de SDL_RenderFillRect, ahora usamos SDL_RenderCopy
+        // Esto "copia" la textura (g_player->texture) al renderizador
+        // en la posición y tamaño de renderRect
+        if (g_player->texture) {
+            SDL_RenderCopy(renderer, g_player->texture, NULL, &renderRect);
+        } else {
+            // Si la textura falló en cargar, dibujamos el cuadrado blanco
+            // como antes, para que al menos se vea algo
+            SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+            SDL_RenderFillRect(renderer, &renderRect);
+        }
+
 
         // Esta parte es la linea para apuntar
         // Si estamos apuntando
@@ -264,13 +335,26 @@ int main(int argc, char* argv[]) {
     cout << "Cerrando el juego..." << endl;
     
     //Aca limpiamos la memoria dinamica que claramos arriba con el new
+    // También destruimos la textura del jugador que creamos 
+    if (g_player->texture){
+        SDL_DestroyTexture(g_player->texture);
+    }
+    
+
+    //Limpiar la textura del fondo
+    if (g_backgroundTexture) {
+        SDL_DestroyTexture(g_backgroundTexture);
+    }
     delete g_player;
     g_player = nullptr; // Ni se para que sirve, pero vi en las exposiciones de los chavos que es una buena practica
     
     // Destruimos el pincel y la ventana
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
-    // Apagamos SDL
+
+    // Apagamos SDL_image
+    IMG_Quit();
+    // Apagamos SDLB
     SDL_Quit();
 
     return 0; // El programa termina

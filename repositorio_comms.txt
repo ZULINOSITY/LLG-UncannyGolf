@@ -1,0 +1,10 @@
+# 2.
+git init
+# 3.
+git add .
+# 4.
+git commit -m "Mi primer commit del juego de golf"
+# 5.
+git remote add origin https://github.com/ZULINOSITY/LLG-UncannyGolf.git
+# 6.
+git push -u origin main
