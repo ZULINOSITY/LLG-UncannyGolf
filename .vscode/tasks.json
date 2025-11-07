@@ -6,14 +6,14 @@
             "type": "shell",
             "command": "g++",
             "args": [
-                "${workspaceFolder}/main.cpp",
+                "${workspaceFolder}LLG-UncannyGolf/main.cpp",
                 "-I${workspaceFolder}/SDL2-2.32.10/x86_64-w64-mingw32/include",
                 "-L${workspaceFolder}/SDL2-2.32.10/x86_64-w64-mingw32/lib",
                 "-lmingw32",
                 "-lSDL2main",
                 "-lSDL2",
                 "-o",
-                "${workspaceFolder}/juego.exe"
+                "${workspaceFolder}LLG-UncannyGolf/juego.exe"
             ],
             "group": {
                 "kind": "build",
