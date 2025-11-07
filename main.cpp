@@ -2,7 +2,7 @@
 #include <iostream>
 #include <cmath> // Para las mates (sqrt, abs)
 
-using namespace std; // Pa no escribir std:: a cada rato, como dijiste
+using namespace std; // Pa no escribir std:: a cada rato
 
 struct Player {
     float x, y;           // Estas variables son para la posición actual papu
@@ -113,18 +113,21 @@ int main(int argc, char* argv[]) {
             // Aqui va la Logica del tiro de golf
             
             // Esto seria lo que es el inicio del tiro, en el momento que hacen click
-            //Si el evento evaluado es "evento-hacer click" y es el click izquierdo
+            //ESTA FUNCIÓN CAMBIO PARA QUE SE PUEDA APUNTAR SOLO CUANDO LA "PELOTA ESTA QUIETA"
             if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
-                // La pelota se detiene, quise hacerlo que siguiera avanzando o que no te dejara apuntar mientras se movia pero el juego se bugueaba bien feo
-                g_player->vx = 0;
-                g_player->vy = 0;
                 
-                //Ponemos el "esta apuntando en true" y actualizamos los valores de la posición actual (recuerda que las variables de posicionamiento y del tiro son diferentes ver "g_player")
-                isAiming = true;
-                aimStartX = event.button.x;
-                aimStartY = event.button.y;
-                aimCurrentX = event.button.x;
-                aimCurrentY = event.button.y;
+                // (velocidad en X e Y sean 0) antes de permitir apuntar.
+                if (g_player->vx == 0.0f && g_player->vy == 0.0f) {
+                    // La pelota se detiene, quise hacerlo que siguiera avanzando o que no te dejara apuntar mientras se movia pero el juego se bugueaba bien feo (Ya lo pude corregir maldita sea)
+                    
+                    //Ponemos el "esta apuntando en true" y actualizamos los valores de la posición actual (recuerda que las variables de posicionamiento y del tiro son diferentes ver "g_player")
+                    isAiming = true;
+                    aimStartX = event.button.x;
+                    aimStartY = event.button.y;
+                    aimCurrentX = event.button.x;
+                    aimCurrentY = event.button.y;
+                }
+                // Si el jugador no está quieto, el clic simplemente se ignora.
             }
 
             // Esto seria el apuntado
@@ -174,8 +177,8 @@ int main(int argc, char* argv[]) {
             g_player->vx *= FRICTION;
             g_player->vy *= FRICTION;
 
-            // Este if hace que al sumar las velocidades de x Y y, si no suman cierta cantidad (en este caso 0.1)
-            if (abs(g_player->vx) + abs(g_player->vy) < 0.1f) {
+            // Este if hace que al sumar las velocidades de x Y y, si no suman cierta cantidad (en este caso 0.1(esto ya lo cambie a 2 para que se detenga mas rapido))
+            if (abs(g_player->vx) + abs(g_player->vy) < 2) {
                 // la detiene para evitar que se siga moviendo constantemente
                 g_player->vx = 0.0f;
                 g_player->vy = 0.0f;
