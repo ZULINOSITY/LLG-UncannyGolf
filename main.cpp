@@ -3,8 +3,8 @@
 #include <iostream> //No me acuerdo
 #include <cmath> // Para las mates (sqrt, abs)
 #include <string> // Para usar std::string
-#include <cstdlib> //  Para rand() y srand()
-#include <ctime>   //  Para time() (semilla de rand)
+#include <cstdlib> //Para rand() y srand()
+#include <ctime>   //Para time() (semilla de rand)
 
 using namespace std; // Pa no escribir std:: a cada rato
 
@@ -17,7 +17,7 @@ const float POWER_MULTIPLIER = 0.1f;  // Multiplicador de fuerza (qué tan fuert
 const float FRICTION = 0.985f;         // Fricción (ej. 0.985 = 1.5% de freno por frame)
 const float ENEMY_SPEED = 0.5f;        // Velocidad de persecución del enemigo
 
-const int NUM_OBSTACLES = 30; // Cantidad de obstáculos
+const int NUM_OBSTACLES = 40; //Cantidad de obstáculos
 
 // --- Estructuras de Datos ---
 
@@ -29,11 +29,12 @@ struct Entity {
     SDL_Texture* texture; // Variable para guardar nuestra imagen
 };
 
-// Estructura para los obstáculos
-// No necesita velocidad ni textura, solo posición y tamaño
+//Estructura para los obstáculos
+// Ahora incluye la textura
 struct Obstacle {
     float x, y;
     int w, h;
+    SDL_Texture* texture; //Textura para el obstáculo
 };
 
 // Un struct para mantener el estado del juego organizado
@@ -54,7 +55,7 @@ struct GameState {
 // --- Prototipos de Funciones ---
 // (Le decimos al compilador qué funciones existen)
 
-// Función de ayuda para comprobar colisiones AABB
+//Función de ayuda para comprobar colisiones AABB
 bool checkCollision(float x1, float y1, int w1, int h1, float x2, float y2, int w2, int h2);
 
 // SDL_IMAGE
@@ -65,23 +66,23 @@ SDL_Texture* loadTexture(string path, SDL_Renderer* renderer);
 bool init(SDL_Window* &window, SDL_Renderer* &renderer);
 
 // Carga texturas e inicializa la posición de las entidades
-// Añadido Obstacle obstacles[] y Entity* hole
-void loadMedia(SDL_Renderer* renderer, Entity* player, Entity* enemy, Obstacle obstacles[], Entity* hole, SDL_Texture* &background);
+//Añadido Obstacle obstacles[], Entity* hole y SDL_Texture* &obstacleTexture
+void loadMedia(SDL_Renderer* renderer, Entity* player, Entity* enemy, Obstacle obstacles[], Entity* hole, SDL_Texture* &background, SDL_Texture* &obstacleTexture);
 
 // Maneja toda la entrada del usuario (teclado, mouse)
 void handleEvents(SDL_Event &event, GameState &state, Entity* player);
 
 // Actualiza la lógica del juego (físicas, IA)
-// Añadido const Obstacle obstacles[] y const Entity* hole
+//Añadido const Obstacle obstacles[] y const Entity* hole
 void update(GameState &state, Entity* player, Entity* enemy, const Obstacle obstacles[], const Entity* hole);
 
 // Dibuja todo en la pantalla
-// Añadido const Obstacle obstacles[] y const Entity* hole
+//Añadido const Obstacle obstacles[] y const Entity* hole
 void render(SDL_Renderer* renderer, const GameState &state, const Entity* player, const Entity* enemy, const Obstacle obstacles[], const Entity* hole, SDL_Texture* background);
 
 // Libera todos los recursos
-// Añadido Obstacle obstacles[] y Entity* hole
-void cleanup(SDL_Window* window, SDL_Renderer* renderer, Entity* player, Entity* enemy, Obstacle obstacles[], Entity* hole, SDL_Texture* background);
+//Añadido Obstacle obstacles[], Entity* hole y SDL_Texture* &obstacleTexture
+void cleanup(SDL_Window* window, SDL_Renderer* renderer, Entity* player, Entity* enemy, Obstacle obstacles[], Entity* hole, SDL_Texture* background, SDL_Texture* &obstacleTexture);
 
 
 // --- Función Principal (main) ---
@@ -93,11 +94,13 @@ int main(int argc, char* argv[]) {
     
     // Texturas y Entidades
     SDL_Texture* g_backgroundTexture = nullptr;
+    //Textura base para los obstáculos
+    SDL_Texture* g_obstacleBaseTexture = nullptr; 
     Entity* g_player = new Entity();
     Entity* g_enemy = new Entity();
-    // Array dinámico para guardar los obstáculos
+    //Array dinámico para guardar los obstáculos
     Obstacle* g_obstacles = new Obstacle[NUM_OBSTACLES];
-    // Entidad para el hoyo (meta)
+    //Entidad para el hoyo (meta)
     Entity* g_hole = new Entity();
 
     // Estado del juego
@@ -105,19 +108,19 @@ int main(int argc, char* argv[]) {
     // Esta es la "caja" donde SDL va a meter los eventos (teclas, mouse, etc)
     SDL_Event g_event;
 
-    // Inicializar
+    //Inicializar
     if (!init(g_window, g_renderer)) {
         cerr << "Fallo al inicializar." << endl;
         return 1;
     }
 
     // Cargar Media
-    // Pasamos g_obstacles y g_hole
-    loadMedia(g_renderer, g_player, g_enemy, g_obstacles, g_hole, g_backgroundTexture);
+    //Pasamos g_obstacles, g_hole y g_obstacleBaseTexture
+    loadMedia(g_renderer, g_player, g_enemy, g_obstacles, g_hole, g_backgroundTexture, g_obstacleBaseTexture);
 
     //Es un cout wei, solo que se va a escribir en la consola
     cout << "Motor iniciado. Haz clic y arrastra para disparar." << endl;
-    cout << "Llega al hoyo negro para ganar. Evita al Uncanny Cat." << endl; // 
+    cout << "Llega al hoyo negro para ganar. Evita al Uncanny Cat." << endl; 
 
     // Game Loop
     //El game loop, para que el juego continue el tiempo que requerimos, esto nos va a servir para poder finalizar el programa sin la necesidad de tener que presionar la x
@@ -126,24 +129,24 @@ int main(int argc, char* argv[]) {
     //Pues mientras que efectivamente el programa este funcionando proceda
     while (g_gameState.isRunning) {
         
-        // Manejar Eventos
+        // 3a. Manejar Eventos
         handleEvents(g_event, g_gameState, g_player);
         
-        // Actualizar Lógica
-        // Pasamos g_obstacles y g_hole
+        // 3b. Actualizar Lógica
+        //Pasamos g_obstacles y g_hole
         // Aquí es donde ocurre la física, esto se ejecuta en cada momento del programa, (osea cuando la pelota se esta moviendo, esto hace que se mueva y se siga moviendo).
         update(g_gameState, g_player, g_enemy, g_obstacles, g_hole);
 
-        // Dibujar
-        // Pasamos g_obstacles y g_hole
+        // 3c. Dibujar
+        //Pasamos g_obstacles y g_hole
         // Este apartado es la parte grafica, lo que se ve
         render(g_renderer, g_gameState, g_player, g_enemy, g_obstacles, g_hole, g_backgroundTexture);
 
     } // Fin del Game Loop
 
     // Limpiar y Salir
-    // Pasamos g_obstacles y g_hole
-    cleanup(g_window, g_renderer, g_player, g_enemy, g_obstacles, g_hole, g_backgroundTexture);
+    //Pasamos g_obstacles, g_hole y g_obstacleBaseTexture
+    cleanup(g_window, g_renderer, g_player, g_enemy, g_obstacles, g_hole, g_backgroundTexture, g_obstacleBaseTexture);
 
     return 0; // El programa termina
 }
@@ -151,7 +154,7 @@ int main(int argc, char* argv[]) {
 
 // --- Implementación de Funciones ---
 
-// 
+
 // Comprueba si dos rectángulos (cajas de colisión) se superponen.
 bool checkCollision(float x1, float y1, int w1, int h1, float x2, float y2, int w2, int h2) {
     // Colisión en eje X
@@ -167,7 +170,7 @@ bool checkCollision(float x1, float y1, int w1, int h1, float x2, float y2, int 
 }
 
 SDL_Texture* loadTexture(string path, SDL_Renderer* renderer) {
-
+// ... (sin cambios en esta función) ...
     SDL_Texture* newTexture = nullptr;
 
     // Carga la imagen desde un archivo a la memoria (CPU)
@@ -190,7 +193,7 @@ SDL_Texture* loadTexture(string path, SDL_Renderer* renderer) {
 }
 
 bool init(SDL_Window* &window, SDL_Renderer* &renderer) {
-
+// ... (sin cambios en esta función) ...
     //Inicializa el sdl2, la verdad ni puta idea, pero todos los videos lo ponian, obviamente revisa si el sdl se inicio correctamente y si no que se detenga el programa,
     //pero la estructura esta algo complicada
     
@@ -226,7 +229,7 @@ bool init(SDL_Window* &window, SDL_Renderer* &renderer) {
         return false;
     }
 
-    // 
+    // --- MODIFICADO ---
     // Si la ventana NO está en fullscreen, usamos el tamaño fijo.
     // Si SÍ está en fullscreen, actualizamos las constantes.
     Uint32 flags = SDL_GetWindowFlags(window);
@@ -253,8 +256,8 @@ bool init(SDL_Window* &window, SDL_Renderer* &renderer) {
     return true; // Éxito
 }
 
-// Añadido Obstacle obstacles[] y Entity* hole
-void loadMedia(SDL_Renderer* renderer, Entity* player, Entity* enemy, Obstacle obstacles[], Entity* hole, SDL_Texture* &background) {
+//Añadido Obstacle obstacles[], Entity* hole y SDL_Texture* &obstacleTexture
+void loadMedia(SDL_Renderer* renderer, Entity* player, Entity* enemy, Obstacle obstacles[], Entity* hole, SDL_Texture* &background, SDL_Texture* &obstacleTexture) {
     // (Ahora es un 'Entity', pero la variable se sigue llamando g_player)
     player->w = 50; //Ancho
     player->h = 50; //Alto
@@ -289,24 +292,30 @@ void loadMedia(SDL_Renderer* renderer, Entity* player, Entity* enemy, Obstacle o
         cerr << "Error: No se pudo cargar 'fondo.png'. El fondo será gris." << endl;
     }
 
-    // Inicializar la semilla aleatoria
+    //Cargar la textura base para los obstáculos
+    obstacleTexture = loadTexture("block.png", renderer); // <--- CAMBIA "block.png" por el nombre de tu imagen
+    if (obstacleTexture == nullptr) {
+        cerr << "Error: No se pudo cargar 'block.png'. Los obstáculos serán cuadrados grises." << endl;
+    }
+
+    //Inicializar la semilla aleatoria
     srand(time(NULL)); 
 
-    // Inicializar los obstáculos
+    //Inicializar los obstáculos
     cout << "Generando " << NUM_OBSTACLES << " obstáculos..." << endl;
     for (int i = 0; i < NUM_OBSTACLES; ++i) {
-        obstacles[i].w = 40; // Ancho de 50
-        obstacles[i].h = 40; // Alto de 50
+        obstacles[i].w = 40; //Ancho de 50
+        obstacles[i].h = 40; //Alto de 50
         
         // Posición aleatoria dentro de la pantalla
         obstacles[i].x = static_cast<float>(rand() % (SCREEN_WIDTH - obstacles[i].w));
         obstacles[i].y = static_cast<float>(rand() % (SCREEN_HEIGHT - obstacles[i].h));
 
-        // NOTA: Podríamos comprobar si los obstáculos se superponen entre sí,
-        // pero por ahora lo dejamos simple.
+        //Asignar la textura cargada a este obstáculo
+        obstacles[i].texture = obstacleTexture;
     }
 
-    //  Configurar el hoyo
+    //Configurar el hoyo
     hole->w = 50; // El hoyo tendrá 50x50
     hole->h = 50;
     hole->vx = 0;
@@ -316,7 +325,7 @@ void loadMedia(SDL_Renderer* renderer, Entity* player, Entity* enemy, Obstacle o
         cerr << "Error: No se pudo cargar 'hole.png'. El hoyo será un cuadrado negro." << endl;
     }
 
-    //  Lógica de generación para el hoyo (evitando colisiones)
+    //Lógica de generación para el hoyo (evitando colisiones)
     cout << "Buscando un lugar para el hoyo..." << endl;
     bool isColliding;
     do {
@@ -353,6 +362,7 @@ void loadMedia(SDL_Renderer* renderer, Entity* player, Entity* enemy, Obstacle o
 
 
 void handleEvents(SDL_Event &event, GameState &state, Entity* player) {
+// ... (sin cambios en esta función) ...
     // Eventos tin ling
     //Mientras haya eventos pendientes y verifica esos eventos pendientes con el event si te acuerdas lo declaramos arriba
     while (SDL_PollEvent(&event)) {
@@ -423,13 +433,13 @@ void handleEvents(SDL_Event &event, GameState &state, Entity* player) {
     } // Fin del bucle de eventos (SDL_PollEvent)
 }
 
-// Añadido const Obstacle obstacles[] y const Entity* hole
+//Añadido const Obstacle obstacles[] y const Entity* hole
 void update(GameState &state, Entity* player, Entity* enemy, const Obstacle obstacles[], const Entity* hole) {
     // (Esta función contiene la lógica que estaba después de SDL_PollEvent)
 
     //-------------------------------------------------------------------------------------------------------------------------
     //Logica del enemigo
-// ... (sin cambios en esta sección) ...
+
     // El enemigo se mueve hacia el jugador
     { // Se usa un bloque {} para aislar las variables de esta lógica
         // Encontrar el objetivo (el centro del jugador)
@@ -441,7 +451,7 @@ void update(GameState &state, Entity* player, Entity* enemy, const Obstacle obst
         float dx = targetX - (enemy->x + enemy->w / 2.0f);
         float dy = targetY - (enemy->y + enemy->h / 2.0f);
 
-        //  Calcular la distancia (teorema de pitágoras)
+        // Calcular la distancia (teorema de pitágoras)
         float distance = sqrt(dx * dx + dy * dy);
 
         // Mover al enemigo
@@ -459,7 +469,7 @@ void update(GameState &state, Entity* player, Entity* enemy, const Obstacle obst
     
     //-------------------------------------------------------------------------------------------------------------------------
     // --- LÓGICA DEL JUGADOR REFACTORIZADA ---
-// ... (sin cambios en esta sección) ...
+
     // Esta era la parte que te decia que se bugueaba mucho, asi que de preferencia no le muevas
     if (!state.isAiming) {
         
@@ -535,7 +545,7 @@ void update(GameState &state, Entity* player, Entity* enemy, const Obstacle obst
 
     //-------------------------------------------------------------------------------------------------------------------------
     
-    // Comprobar colisión con el hoyo (VICTORIA)
+    //Comprobar colisión con el hoyo (VICTORIA)
     // Lo comprobamos ANTES que la colisión con el enemigo
     if (checkCollision(player->x, player->y, player->w, player->h, hole->x, hole->y, hole->w, hole->h))
     {
@@ -551,7 +561,7 @@ void update(GameState &state, Entity* player, Entity* enemy, const Obstacle obst
 
 
     // Comprobamos si los rectángulos se superponen (enemy y player) (DERROTA)
-    if (state.isRunning && // Solo comprobar si el juego no ha terminado (por victoria)
+    if (state.isRunning && //Solo comprobar si el juego no ha terminado (por victoria)
         checkCollision(player->x, player->y, player->w, player->h, enemy->x, enemy->y, enemy->w, enemy->h))
     {
         // ggs skill issue
@@ -560,12 +570,12 @@ void update(GameState &state, Entity* player, Entity* enemy, const Obstacle obst
     }
 }
 
-// --- MODIFICADO --- Añadido const Obstacle obstacles[] y const Entity* hole
+//Añadido const Obstacle obstacles[] y const Entity* hole
 void render(SDL_Renderer* renderer, const GameState &state, const Entity* player, const Entity* enemy, const Obstacle obstacles[], const Entity* hole, SDL_Texture* background) {
     // (Esta función contiene toda la lógica de dibujo)
     
     // Dibuja el fondo
-// ... (sin cambios en esta sección) ...
+
     if (background) {
         // Dibuja la textura de fondo para que cubra toda la pantalla
         // El primer NULL = usa la textura completa
@@ -577,10 +587,8 @@ void render(SDL_Renderer* renderer, const GameState &state, const Entity* player
         SDL_RenderClear(renderer);
     }
 
-    // Dibujar los obstáculos
-// ... (sin cambios en esta sección) ...
+    //Dibujar los obstáculos
     // Los dibujamos después del fondo pero antes que el jugador y el enemigo
-    SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255); // Color gris
     for (int i = 0; i < NUM_OBSTACLES; ++i) {
         SDL_Rect obsRect = {
             static_cast<int>(obstacles[i].x),
@@ -588,10 +596,17 @@ void render(SDL_Renderer* renderer, const GameState &state, const Entity* player
             obstacles[i].w,
             obstacles[i].h
         };
-        SDL_RenderFillRect(renderer, &obsRect);
+        //Dibujar la textura del obstáculo si existe
+        if (obstacles[i].texture) {
+            SDL_RenderCopy(renderer, obstacles[i].texture, NULL, &obsRect);
+        } else {
+            // Si no hay textura, dibujar un cuadrado gris (como antes)
+            SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255); // Color gris
+            SDL_RenderFillRect(renderer, &obsRect);
+        }
     }
 
-    //  Dibujar el hoyo
+    //Dibujar el hoyo
     // Lo dibujamos después de los obstáculos, pero antes que el jugador/enemigo
     SDL_Rect holeRenderRect = {
         static_cast<int>(hole->x),
@@ -609,7 +624,7 @@ void render(SDL_Renderer* renderer, const GameState &state, const Entity* player
 
 
     // Dibuja al enemigo
-// ... (sin cambios en esta sección) ...
+
     SDL_Rect enemyRenderRect = {
         static_cast<int>(enemy->x),
         static_cast<int>(enemy->y),
@@ -626,7 +641,7 @@ void render(SDL_Renderer* renderer, const GameState &state, const Entity* player
     }
 
     // Dibujar al jugador
-// ... (sin cambios en esta sección) ...
+
     // (Lo dibujamos después del enemigo para que aparezca por encima)
     // En el SDL no podemos usar floats pa dibujar, así que convertimos
     // nuestra posición (float) a un int.
@@ -648,7 +663,7 @@ void render(SDL_Renderer* renderer, const GameState &state, const Entity* player
     }
 
     // Esta parte es la linea para apuntar
-// ... (sin cambios en esta sección) ...
+
     // Si estamos apuntando
     if (state.isAiming) {
         // Calculamos el centro del jugador (formulas por IA otra vez)
@@ -674,8 +689,8 @@ void render(SDL_Renderer* renderer, const GameState &state, const Entity* player
     SDL_RenderPresent(renderer);
 }
 
-// --- MODIFICADO --- Añadido Obstacle obstacles[] y Entity* hole
-void cleanup(SDL_Window* window, SDL_Renderer* renderer, Entity* player, Entity* enemy, Obstacle obstacles[], Entity* hole, SDL_Texture* background) {
+//Añadido Obstacle obstacles[], Entity* hole y SDL_Texture* &obstacleTexture
+void cleanup(SDL_Window* window, SDL_Renderer* renderer, Entity* player, Entity* enemy, Obstacle obstacles[], Entity* hole, SDL_Texture* background, SDL_Texture* &obstacleTexture) {
     //La limpieza
     cout << "Cerrando el juego..." << endl;
     
@@ -694,14 +709,21 @@ void cleanup(SDL_Window* window, SDL_Renderer* renderer, Entity* player, Entity*
     delete enemy;
     enemy = nullptr;
 
-    //  Limpiar el hoyo
+    //Limpiar el hoyo
     if (hole->texture){
         SDL_DestroyTexture(hole->texture);
     }
     delete hole;
     hole = nullptr;
 
-    //  Limpiar el array de obstáculos
+    //Limpiar la textura base de los obstáculos
+    // (Solo destruimos esta, ya que todos los obstáculos la comparten)
+    if (obstacleTexture) {
+        SDL_DestroyTexture(obstacleTexture);
+        obstacleTexture = nullptr;
+    }
+
+    //Limpiar el array de obstáculos
     delete[] obstacles;
     obstacles = nullptr;
 
