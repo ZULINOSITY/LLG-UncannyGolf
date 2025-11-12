@@ -410,7 +410,7 @@ void update(SDL_Window* window, GameState &state, Entity* player, Entity* enemy,
     }
 }
 
-void render(SDL_Renderer* renderer, const GameState &state, const Entity* player, const Entity* enemy, const Obstacle obstacles[], const Entity* hole, SDL_Texture* background) {
+void render(SDL_Renderer* renderer, const GameState &state, const Entity* player, const Entity* enemy, const Obstacle obstacles[], const Entity* hole, SDL_Texture* background, TTF_Font* &g_font) {
     
     // Dibuja el fondo
     if (background) {
@@ -477,6 +477,23 @@ void render(SDL_Renderer* renderer, const GameState &state, const Entity* player
     } else {
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
         SDL_RenderFillRect(renderer, &playerRenderRect);
+    }
+
+    // Dibujar el numero de nivel en la esquina superior izquierda
+    
+    // Convertir el nivel a texto
+    string levelText = "Nivel: " + to_string(state.levelCount);
+    // Renderizar el texto
+    SDL_Color textColor = { 255, 255, 255, 255 };
+    SDL_Surface* textSurface = TTF_RenderText_Solid(g_font, levelText.c_str(), textColor);
+    if (textSurface) {
+        SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
+        if (textTexture) {
+            SDL_Rect textRect = { 10, 10, textSurface->w, textSurface->h };
+            SDL_RenderCopy(renderer, textTexture, NULL, &textRect);
+            SDL_DestroyTexture(textTexture);
+        }
+        SDL_FreeSurface(textSurface);
     }
 
     // Esta parte es la linea para apuntar

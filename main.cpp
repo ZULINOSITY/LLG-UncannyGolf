@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
             handleEvents(g_event, g_gameState, g_player);
             // Actualizar Lógica
             update(g_window, g_gameState, g_player, g_enemy, g_obstacles, g_hole);
-            render(g_renderer, g_gameState, g_player, g_enemy, g_obstacles, g_hole, g_backgroundTexture);
+            render(g_renderer, g_gameState, g_player, g_enemy, g_obstacles, g_hole, g_backgroundTexture, g_font);
             break;
 
         default:
