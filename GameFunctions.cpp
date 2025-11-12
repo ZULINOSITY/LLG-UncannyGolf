@@ -1,4 +1,5 @@
 #include "GameFunctions.h"
+#include "AudioHandler.h"
 #include <SDL2/SDL_image.h>
 #include <iostream>
 #include <cmath>
@@ -15,7 +16,7 @@ bool init(SDL_Window* &window, SDL_Renderer* &renderer) {
     //Inicializa el sdl2, la verdad ni puta idea, pero todos los videos lo ponian
     
     // Tenemos que inicializar SDL_VIDEO
-    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
         cerr << "Error al inicializar SDL: " << SDL_GetError() << endl;
         return false;
     }
@@ -27,6 +28,13 @@ bool init(SDL_Window* &window, SDL_Renderer* &renderer) {
         SDL_Quit();
         return false;
     }
+
+    // Inicializa SDL_Audio (Para Wav´s)
+    // AudioHandler& audio = AudioHandler::getInstance();
+    // if (!audio.initialize()){
+    //     cerr << "Error al Inicializa SDL_Audio. Averigua qué fué :)" << endl;
+    // }
+
 
     //El evento que crea la ventana donde se va a cargar el jueguito
     window = SDL_CreateWindow(
@@ -61,6 +69,15 @@ bool init(SDL_Window* &window, SDL_Renderer* &renderer) {
         IMG_Quit();
         SDL_Quit();
         return false;
+    }
+
+    AudioHandler::getInstance().setVolume(1.0f);
+    cout << "Inicializando sistema de audio..." << endl;
+    AudioHandler& audio = AudioHandler::getInstance();
+    if (audio.initialize()) {
+        cout << "AudioHandler Inicializado." << endl;
+    } else {
+        cerr << "AudioHandler NO inicializado" << endl;
     }
     
     return true; // Éxito
@@ -155,6 +172,8 @@ void loadMedia(SDL_Renderer* renderer, Entity* player, Entity* enemy, Obstacle o
     // Configurar dimensiones
     player->w = 50;
     player->h = 50;
+
+    AudioHandler& audio = AudioHandler::getInstance();
     
     // Cargamos la textura del jugador
     player->texture = loadTexture("Assets/cat.png", renderer);
@@ -183,6 +202,13 @@ void loadMedia(SDL_Renderer* renderer, Entity* player, Entity* enemy, Obstacle o
     if (obstacleTexture == nullptr) {
         cerr << "Error: No se pudo cargar 'block.png'. Los obstáculos serán cuadrados grises." << endl;
     }
+
+    
+    audio.loadWAV("Assets/sfx/ahh_game.wav", "background");
+    audio.loadWAV("Assets/sfx/die.wav", "dep");
+    audio.loadWAV("Assets/sfx/GG.wav", "GG");
+    audio.loadWAV("Assets/sfx/golf.wav", "shoot");
+    audio.loadWAV("Assets/sfx/hit.wav", "bounce");
 
     //Configurar dimensiones obstáculos
     for (int i = 0; i < NUM_OBSTACLES; ++i) {
@@ -249,6 +275,8 @@ void handleEvents(SDL_Event &event, GameState &state, Entity* player) {
                 
                 player->vx = launchDX * POWER_MULTIPLIER;
                 player->vy = launchDY * POWER_MULTIPLIER;
+
+                AudioHandler::getInstance().playSound("shoot");
             }
         }
     } 
@@ -291,6 +319,7 @@ void update(SDL_Window* window, GameState &state, Entity* player, Entity* enemy,
                     player->x = obs->x + obs->w; 
                 }
                 player->vx *= -1; // Rebotar
+                AudioHandler::getInstance().playSound("bounce");
             }
         }
 
@@ -317,6 +346,7 @@ void update(SDL_Window* window, GameState &state, Entity* player, Entity* enemy,
                     player->y = obs->y + obs->h; 
                 }
                 player->vy *= -1; // Rebotar
+                AudioHandler::getInstance().playSound("bounce");
             }
         }
 
@@ -342,6 +372,7 @@ void update(SDL_Window* window, GameState &state, Entity* player, Entity* enemy,
     // Comprobar colisión con el hoyo (VICTORIA)
     if (checkCollision(player->x, player->y, player->w, player->h, hole->x, hole->y, hole->w, hole->h))
     {
+        AudioHandler::getInstance().playSound("GG");
         cout << "Has llegado al hoyo Nivel " << state.levelCount << " completado." << endl;
         
         state.levelCount++; // Aumentamos contador
@@ -359,6 +390,7 @@ void update(SDL_Window* window, GameState &state, Entity* player, Entity* enemy,
     if (state.isRunning && 
         checkCollision(player->x, player->y, player->w, player->h, enemy->x, enemy->y, enemy->w, enemy->h))
     {
+        AudioHandler::getInstance().playSound("gameover");
         state.isRunning = false; 
         cout << "¡El Uncanny Cat te ha atrapado! Fin del juego. Llegaste al nivel " << state.levelCount << "." << endl;
     }
@@ -479,6 +511,8 @@ void cleanup(SDL_Window* window, SDL_Renderer* renderer, Entity* player, Entity*
         SDL_DestroyTexture(obstacleTexture);
         obstacleTexture = nullptr;
     }
+
+    AudioHandler::getInstance().shutdown();
 
     delete[] obstacles;
     obstacles = nullptr;

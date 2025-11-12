@@ -39,3 +39,4 @@ SDL_Texture* loadTexture(string path, SDL_Renderer* renderer) {
 
     return newTexture;
 }
+
