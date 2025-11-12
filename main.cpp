@@ -39,13 +39,13 @@ int main(int argc, char* argv[]) {
     // Game Loop
     while (g_gameState.isRunning) {
         
-        // 3a. Manejar Eventos
+        // Manejar Eventos
         handleEvents(g_event, g_gameState, g_player);
         
-        // 3b. Actualizar Lógica
+        // Actualizar Lógica
         update(g_window, g_gameState, g_player, g_enemy, g_obstacles, g_hole);
 
-        // 3c. Dibujar
+        // Dibujar
         render(g_renderer, g_gameState, g_player, g_enemy, g_obstacles, g_hole, g_backgroundTexture);
 
     } // Fin del Game Loop

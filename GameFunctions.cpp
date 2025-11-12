@@ -441,7 +441,7 @@ void render(SDL_Renderer* renderer, const GameState &state, const Entity* player
         int pullDX = state.aimCurrentX - state.aimStartX;
         int pullDY = state.aimCurrentY - state.aimStartY;
 
-        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Rojo
+        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // RGBA
         SDL_RenderDrawLine(renderer, 
             playerCenterX,          
             playerCenterY,          
