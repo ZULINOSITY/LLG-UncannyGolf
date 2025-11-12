@@ -38,7 +38,20 @@ int main(int argc, char *argv[])
     }
 
     // Cargar Menú Principal
+     MenuOption option = runMenu(g_renderer);
 
+    if (option == MENU_QUIT) {
+        cleanup(g_window, g_renderer, g_player, g_enemy, g_obstacles, g_hole, g_backgroundTexture, g_obstacleBaseTexture);
+        return 0;
+    }
+
+    if (option == MENU_PLAY) {
+        cout << "Iniciando el juego..." << endl;
+    } else {
+        cleanup(g_window, g_renderer, g_player, g_enemy, g_obstacles, g_hole, g_backgroundTexture, g_obstacleBaseTexture);
+        return 0;
+    }
+    
     // Cargar Media
     loadMedia(g_renderer, g_player, g_enemy, g_obstacles, g_hole, g_backgroundTexture, g_obstacleBaseTexture, g_font);
 
