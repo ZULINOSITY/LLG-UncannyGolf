@@ -77,16 +77,6 @@ bool init(SDL_Window* &window, SDL_Renderer* &renderer, TTF_Font* &font) {
         return false;
     }
 
-    // Cargar la fuente
-    font = TTF_OpenFont("Assets/COMIC.TTF", 28);
-    if (!font) {
-        cerr << "Error al cargar la fuente: " << TTF_GetError() << endl;
-        SDL_DestroyRenderer(renderer);
-        SDL_DestroyWindow(window);
-        IMG_Quit();
-        SDL_Quit();
-        return false;
-    }
     
     AudioHandler::getInstance().setVolume(1.0f);
     cout << "Inicializando sistema de audio..." << endl;
@@ -185,7 +175,7 @@ void generateLevel(Entity* player, Entity* enemy, Obstacle obstacles[], Entity* 
     cout << "Nuevo mapa generado." << endl;
 }
 
-void loadMedia(SDL_Renderer* renderer, Entity* player, Entity* enemy, Obstacle obstacles[], Entity* hole, SDL_Texture* &background, SDL_Texture* &obstacleTexture) {
+void loadMedia(SDL_Renderer* renderer, Entity* player, Entity* enemy, Obstacle obstacles[], Entity* hole, SDL_Texture* &background, SDL_Texture* &obstacleTexture, TTF_Font* &font) {
     // Configurar dimensiones
     player->w = 50;
     player->h = 50;
@@ -240,6 +230,13 @@ void loadMedia(SDL_Renderer* renderer, Entity* player, Entity* enemy, Obstacle o
     hole->texture = loadTexture("Assets/hole.png", renderer); 
     if (hole->texture == nullptr) {
         cerr << "Error: No se pudo cargar 'hole.png'. El hoyo será un cuadrado negro." << endl;
+    }
+
+    // Cargar la fuente
+    font = TTF_OpenFont("Assets/COMIC.TTF", 28);
+    if (font == nullptr) {
+        cerr << "Error al cargar la fuente: COMIC.TTF" << TTF_GetError() << endl;
+        TTF_Quit();
     }
 
     //Inicializar la semilla aleatoria
