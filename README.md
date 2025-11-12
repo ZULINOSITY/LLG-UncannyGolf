@@ -9,6 +9,8 @@ Proyecto de la materia Programación de Bajo Nivel.
 ## Librerías (lamentable)
 
 ![SDL2](https://img.shields.io/badge/SDL2-2F528F?style=for-the-badge&logo=sdl&logoColor=white&labelColor=2F528F&color=2F528F)
+![SDL2_Image](https://img.shields.io/badge/SDL2_Image-2F528F?style=for-the-badge&logo=sdl&logoColor=white&labelColor=2F528F&color=2F528F)
+![SDL2_ttf](https://img.shields.io/badge/SDL2_ttf-2F528F?style=for-the-badge&logo=sdl&logoColor=white&labelColor=2F528F&color=2F528F)
 
 ## Autores
 
