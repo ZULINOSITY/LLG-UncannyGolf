@@ -50,6 +50,9 @@ struct GameState {
     int shootCount = 0;
     
     Scene currentScene = Scene::MAIN_MENU; // Escena actual del juego
+    bool isDeathScene = false; // Escena de muerte
+    Uint32 deathSceneStartTime = 0; // Tiempo cuando empezó la pantalla de muerte
+    float deathSceneDuration = 1000.0f; // Duración en milisegundos (1 segundo)
     
     // Aqui empiezan las mecanicas del golf, y esta es una puta mierda asi que presta atención porque es dificil de explicar
     bool isAiming = false;      // Aca declaramos la variable que utilizaremos para saber si basicamente el jugador esta presionando el click para apuntar

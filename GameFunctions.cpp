@@ -306,6 +306,26 @@ void handleEvents(SDL_Event &event, GameState &state, Entity* player) {
 }
 
 void update(SDL_Window* window, GameState &state, Entity* player, Entity* enemy, Obstacle obstacles[], Entity* hole) {
+    // Lógica de la pantalla de muerte (Screamer)
+    if (state.isDeathScene) {
+        Uint32 currentTime = SDL_GetTicks();
+        Uint32 elapsedTime = currentTime - state.deathSceneStartTime;
+        
+        // Si ha pasado el tiempo de la pantalla de muerte, reiniciar el nivel
+        if (elapsedTime >= state.deathSceneDuration) {
+            state.isDeathScene = false;
+            state.levelCount = 1;
+            state.isAiming = false;
+            
+            string newTitle = "Uncanny Cat Golf Nivel " + to_string(state.levelCount);
+            SDL_SetWindowTitle(window, newTitle.c_str());
+            
+            generateLevel(player, enemy, obstacles, hole);
+            cout << "¡Reiniciando nivel!" << endl;
+        }
+        return; // No procesar más lógica durante la pantalla de muerte
+    }
+    
     // Logica del enemigo
     { 
         float targetX = player->x + (player->w / 2.0f);
@@ -424,7 +444,10 @@ void update(SDL_Window* window, GameState &state, Entity* player, Entity* enemy,
         checkCollision(player->x, player->y, player->w, player->h, enemy->x, enemy->y, enemy->w, enemy->h))
     {
         AudioHandler::getInstance().playSound("dep");
+        state.isDeathScene = true;
+        state.deathSceneStartTime = SDL_GetTicks();
         
+        state.shootCount = 0;
         state.levelCount = 1;
         state.isAiming = false; // Dejamos de apuntar por si acaso
 
@@ -438,90 +461,114 @@ void update(SDL_Window* window, GameState &state, Entity* player, Entity* enemy,
 
 void render(SDL_Renderer* renderer, const GameState &state, const Entity* player, const Entity* enemy, const Obstacle obstacles[], const Entity* hole, SDL_Texture* background) {
     
-    // Dibuja el fondo
-    if (background) {
-        SDL_RenderCopy(renderer, background, NULL, NULL);
-    } else {
-        SDL_SetRenderDrawColor(renderer, 30, 30, 30, 255); 
+    // Si estamos en pantalla de muerte, mostrar solo la textura del enemigo en pantalla completa
+    if (state.isDeathScene) {
+        // Limpiar pantalla con color negro
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
-    }
-
-    //Dibujar los obstáculos
-    for (int i = 0; i < NUM_OBSTACLES; ++i) {
-        SDL_Rect obsRect = {
-            static_cast<int>(obstacles[i].x),
-            static_cast<int>(obstacles[i].y),
-            obstacles[i].w,
-            obstacles[i].h
-        };
-        if (obstacles[i].texture) {
-            SDL_RenderCopy(renderer, obstacles[i].texture, NULL, &obsRect);
+        
+        // Dibujar la textura del enemigo en pantalla completa
+        if (enemy->texture) {
+            // Crear un rectángulo que ocupe toda la pantalla
+            SDL_Rect fullscreenRect = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
+            SDL_RenderCopy(renderer, enemy->texture, NULL, &fullscreenRect);
         } else {
-            SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255); 
-            SDL_RenderFillRect(renderer, &obsRect);
+            // Fallback: pantalla roja si no hay textura
+            SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+            SDL_RenderClear(renderer);
+        }
+        
+        // Opcional: agregar texto "¡HAS MUERTO!" o similar
+        // (podrías agregar esto si quieres texto superpuesto)
+        
+    } else {
+        // RENDER NORMAL DEL JUEGO (código existente)
+        
+        // Dibuja el fondo
+        if (background) {
+            SDL_RenderCopy(renderer, background, NULL, NULL);
+        } else {
+            SDL_SetRenderDrawColor(renderer, 30, 30, 30, 255); 
+            SDL_RenderClear(renderer);
+        }
+
+        //Dibujar los obstáculos
+        for (int i = 0; i < NUM_OBSTACLES; ++i) {
+            SDL_Rect obsRect = {
+                static_cast<int>(obstacles[i].x),
+                static_cast<int>(obstacles[i].y),
+                obstacles[i].w,
+                obstacles[i].h
+            };
+            if (obstacles[i].texture) {
+                SDL_RenderCopy(renderer, obstacles[i].texture, NULL, &obsRect);
+            } else {
+                SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255); 
+                SDL_RenderFillRect(renderer, &obsRect);
+            }
+        }
+
+        //Dibujar el hoyo
+        SDL_Rect holeRenderRect = {
+            static_cast<int>(hole->x),
+            static_cast<int>(hole->y),
+            hole->w,
+            hole->h
+        };
+        if (hole->texture) {
+            SDL_RenderCopy(renderer, hole->texture, NULL, &holeRenderRect);
+        } else {
+            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+            SDL_RenderFillRect(renderer, &holeRenderRect);
+        }
+
+        // Dibuja al enemigo
+        SDL_Rect enemyRenderRect = {
+            static_cast<int>(enemy->x),
+            static_cast<int>(enemy->y),
+            enemy->w,
+            enemy->h
+        };
+        if (enemy->texture) {
+            SDL_RenderCopy(renderer, enemy->texture, NULL, &enemyRenderRect);
+        } else {
+            SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+            SDL_RenderFillRect(renderer, &enemyRenderRect);
+        }
+
+        // Dibujar al jugador
+        SDL_Rect playerRenderRect = {
+            static_cast<int>(player->x), 
+            static_cast<int>(player->y), 
+            player->w,                 
+            player->h                   
+        };
+        
+        if (player->texture) {
+            SDL_RenderCopy(renderer, player->texture, NULL, &playerRenderRect);
+        } else {
+            SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+            SDL_RenderFillRect(renderer, &playerRenderRect);
+        }
+
+        // Esta parte es la linea para apuntar
+        if (state.isAiming) {
+            int playerCenterX = static_cast<int>(player->x + player->w / 2);
+            int playerCenterY = static_cast<int>(player->y + player->h / 2);
+
+            int pullDX = state.aimCurrentX - state.aimStartX;
+            int pullDY = state.aimCurrentY - state.aimStartY;
+
+            SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // RGBA
+            SDL_RenderDrawLine(renderer, 
+                playerCenterX,          
+                playerCenterY,          
+                playerCenterX - pullDX, 
+                playerCenterY - pullDY  
+            );
         }
     }
-
-    //Dibujar el hoyo
-    SDL_Rect holeRenderRect = {
-        static_cast<int>(hole->x),
-        static_cast<int>(hole->y),
-        hole->w,
-        hole->h
-    };
-    if (hole->texture) {
-        SDL_RenderCopy(renderer, hole->texture, NULL, &holeRenderRect);
-    } else {
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-        SDL_RenderFillRect(renderer, &holeRenderRect);
-    }
-
-    // Dibuja al enemigo
-    SDL_Rect enemyRenderRect = {
-        static_cast<int>(enemy->x),
-        static_cast<int>(enemy->y),
-        enemy->w,
-        enemy->h
-    };
-    if (enemy->texture) {
-        SDL_RenderCopy(renderer, enemy->texture, NULL, &enemyRenderRect);
-    } else {
-        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-        SDL_RenderFillRect(renderer, &enemyRenderRect);
-    }
-
-    // Dibujar al jugador
-    SDL_Rect playerRenderRect = {
-        static_cast<int>(player->x), 
-        static_cast<int>(player->y), 
-        player->w,                 
-        player->h                   
-    };
     
-    if (player->texture) {
-        SDL_RenderCopy(renderer, player->texture, NULL, &playerRenderRect);
-    } else {
-        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-        SDL_RenderFillRect(renderer, &playerRenderRect);
-    }
-
-    // Esta parte es la linea para apuntar
-    if (state.isAiming) {
-        int playerCenterX = static_cast<int>(player->x + player->w / 2);
-        int playerCenterY = static_cast<int>(player->y + player->h / 2);
-
-        int pullDX = state.aimCurrentX - state.aimStartX;
-        int pullDY = state.aimCurrentY - state.aimStartY;
-
-        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // RGBA
-        SDL_RenderDrawLine(renderer, 
-            playerCenterX,          
-            playerCenterY,          
-            playerCenterX - pullDX, 
-            playerCenterY - pullDY  
-        );
-    }
-
     //Esta función es para que se vea lo que ya se dibujo
     SDL_RenderPresent(renderer);
 }
