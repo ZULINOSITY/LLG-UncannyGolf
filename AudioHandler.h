@@ -18,17 +18,16 @@ public:
     
     bool initialize();
     void shutdown();
-
-    void printAudioInfo();
     
-    bool loadWAV(const std::string& filename, const std::string& id);
-    void playSound(const std::string& id);
+    bool loadWAV(const std::string& filename, const std::string& id); // Carga los archivos
+    void playSound(const std::string& id); // Reproduce el archivo mediante su id registrada
     void stopAllSounds();
+    void printAudioInfo(); // Diagnostico de archivos
     
     void setVolume(float volume);
     float getVolume() const;
 
-    bool isInitialized() const { return initialized; }
+    bool isInitialized() const { return initialized; } // (Diagnostico) Comprueba si se encuentra inicializado el sistema
 
 private:
     AudioHandler();

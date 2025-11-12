@@ -16,7 +16,7 @@ int SCREEN_HEIGHT = 600;
 bool init(SDL_Window* &window, SDL_Renderer* &renderer, TTF_Font* &font) {
     //Inicializa el sdl2, la verdad ni puta idea, pero todos los videos lo ponian
     
-    // Tenemos que inicializar SDL_VIDEO
+    // Tenemos que inicializar SDL_VIDEO y SDL_AUDIO
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
         cerr << "Error al inicializar SDL: " << SDL_GetError() << endl;
         return false;
@@ -78,15 +78,15 @@ bool init(SDL_Window* &window, SDL_Renderer* &renderer, TTF_Font* &font) {
     }
 
     
-    AudioHandler::getInstance().setVolume(1.0f);
     cout << "Inicializando sistema de audio..." << endl;
     AudioHandler& audio = AudioHandler::getInstance();
     if (audio.initialize()) {
         cout << "AudioHandler Inicializado." << endl;
+        AudioHandler::getInstance().setVolume(0.6f);
     } else {
         cerr << "AudioHandler NO inicializado" << endl;
     }
-    
+
     return true; // Éxito
 }
 
@@ -180,6 +180,7 @@ void loadMedia(SDL_Renderer* renderer, Entity* player, Entity* enemy, Obstacle o
     player->w = 50;
     player->h = 50;
 
+    // Inicializa el Handler para el Audio
     AudioHandler& audio = AudioHandler::getInstance();
     
     // Cargamos la textura del jugador
@@ -210,12 +211,13 @@ void loadMedia(SDL_Renderer* renderer, Entity* player, Entity* enemy, Obstacle o
         cerr << "Error: No se pudo cargar 'block.png'. Los obstáculos serán cuadrados grises." << endl;
     }
 
-    
+    // Carga todos los audios necesarios
     audio.loadWAV("Assets/sfx/ahh_game.wav", "background");
     audio.loadWAV("Assets/sfx/die.wav", "dep");
     audio.loadWAV("Assets/sfx/GG.wav", "GG");
-    audio.loadWAV("Assets/sfx/golf.wav", "shoot");
+    audio.loadWAV("Assets/sfx/shoot.wav", "shoot");
     audio.loadWAV("Assets/sfx/hit.wav", "bounce");
+    audio.loadWAV("Assets/sfx/drag.wav", "drag");
 
     //Configurar dimensiones obstáculos
     for (int i = 0; i < NUM_OBSTACLES; ++i) {
@@ -270,6 +272,9 @@ void handleEvents(SDL_Event &event, GameState &state, Entity* player) {
                 state.aimStartY = event.button.y;
                 state.aimCurrentX = event.button.x;
                 state.aimCurrentY = event.button.y;
+
+                string newTitle = "Uncanny Cat Golf Nivel " + to_string(state.levelCount) + " | Tiros: " + to_string(state.shootCount);
+                AudioHandler::getInstance().playSound("drag");
             }
         }
 
@@ -283,6 +288,7 @@ void handleEvents(SDL_Event &event, GameState &state, Entity* player) {
         if (event.type == SDL_MOUSEBUTTONUP && event.button.button == SDL_BUTTON_LEFT) {
             if (state.isAiming) {
                 state.isAiming = false;
+                state.shootCount++;
                 
                 float launchDX = (state.aimStartX - state.aimCurrentX);
                 float launchDY = (state.aimStartY - state.aimCurrentY);
@@ -341,9 +347,11 @@ void update(SDL_Window* window, GameState &state, Entity* player, Entity* enemy,
         if (player->x < 0) {
             player->x = 0;
             player->vx *= -1;
+            AudioHandler::getInstance().playSound("bounce");
         } else if (player->x + player->w > SCREEN_WIDTH) {
             player->x = SCREEN_WIDTH - player->w;
             player->vx *= -1;
+            AudioHandler::getInstance().playSound("bounce");
         }
 
         // --- MOVIMIENTO Y COLISIÓN EJE Y ---
@@ -368,9 +376,11 @@ void update(SDL_Window* window, GameState &state, Entity* player, Entity* enemy,
         if (player->y < 0) {
             player->y = 0;
             player->vy *= -1;
+            AudioHandler::getInstance().playSound("bounce");
         } else if (player->y + player->h > SCREEN_HEIGHT) {
             player->y = SCREEN_HEIGHT - player->h;
             player->vy *= -1;
+            AudioHandler::getInstance().playSound("bounce");
         }
 
         // --- FRICCIÓN Y PARADA ---
@@ -387,8 +397,14 @@ void update(SDL_Window* window, GameState &state, Entity* player, Entity* enemy,
     if (checkCollision(player->x, player->y, player->w, player->h, hole->x, hole->y, hole->w, hole->h))
     {
         AudioHandler::getInstance().playSound("GG");
-        cout << "Has llegado al hoyo Nivel " << state.levelCount << " completado." << endl;
-        
+
+        if(state.shootCount == 1){
+            cout << "Hoyo en UNO!, Has llegado al hoyo Nivel " << state.levelCount << endl;
+        }else{
+            cout << "Has llegado al hoyo Nivel " << state.levelCount << ", completado en " << state.shootCount << " tiros." << endl;
+        }
+
+        state.shootCount = 0; // Restauramos el contador de tiros
         state.levelCount++; // Aumentamos contador
         state.isAiming = false; // Dejamos de apuntar por si acaso
 
@@ -404,8 +420,15 @@ void update(SDL_Window* window, GameState &state, Entity* player, Entity* enemy,
     if (state.isRunning && 
         checkCollision(player->x, player->y, player->w, player->h, enemy->x, enemy->y, enemy->w, enemy->h))
     {
-        AudioHandler::getInstance().playSound("gameover");
-        state.isRunning = false; 
+        AudioHandler::getInstance().playSound("dep");
+        
+        state.levelCount = 1;
+        state.isAiming = false; // Dejamos de apuntar por si acaso
+
+        string newTitle = "Uncanny Cat Golf Nivel " + to_string(state.levelCount);
+        SDL_SetWindowTitle(window, newTitle.c_str());
+
+        generateLevel(player, enemy, obstacles, hole);
         cout << "¡El Uncanny Cat te ha atrapado! Fin del juego. Llegaste al nivel " << state.levelCount << "." << endl;
     }
 }

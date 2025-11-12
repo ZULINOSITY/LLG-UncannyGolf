@@ -47,6 +47,7 @@ struct Obstacle {
 struct GameState {
     bool isRunning = true;      // El game loop principal
     int levelCount = 1;         // Contador de niveles superados
+    int shootCount = 0;
     
     Scene currentScene = Scene::MAIN_MENU; // Escena actual del juego
     
