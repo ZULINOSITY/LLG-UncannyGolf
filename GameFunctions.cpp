@@ -1,5 +1,6 @@
 #include "GameFunctions.h"
 #include <SDL2/SDL_image.h>
+#include <SDL2/SDL_ttf.h>
 #include <iostream>
 #include <cmath>
 #include <cstdlib> //Para rand() y srand()
@@ -11,7 +12,7 @@ using namespace std;
 int SCREEN_WIDTH = 800;
 int SCREEN_HEIGHT = 600;
 
-bool init(SDL_Window* &window, SDL_Renderer* &renderer) {
+bool init(SDL_Window* &window, SDL_Renderer* &renderer, TTF_Font* &font) {
     //Inicializa el sdl2, la verdad ni puta idea, pero todos los videos lo ponian
     
     // Tenemos que inicializar SDL_VIDEO
@@ -25,6 +26,12 @@ bool init(SDL_Window* &window, SDL_Renderer* &renderer) {
     if (!(IMG_Init(imgFlags) & imgFlags)) {
         cerr << "Error al inicializar SDL_image: " << IMG_GetError() << endl;
         SDL_Quit();
+        return false;
+    }
+
+    // inicializamos TTF
+    if (TTF_Init() != 0) {
+        cerr << "Error inicializando SDL_ttf: " << TTF_GetError() << endl;
         return false;
     }
 
@@ -57,6 +64,17 @@ bool init(SDL_Window* &window, SDL_Renderer* &renderer) {
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (!renderer) {
         cerr << "Error al crear el renderizador: " << SDL_GetError() << endl;
+        SDL_DestroyWindow(window);
+        IMG_Quit();
+        SDL_Quit();
+        return false;
+    }
+
+    // Cargar la fuente
+    font = TTF_OpenFont("Assets/COMIC.TTF", 28);
+    if (!font) {
+        cerr << "Error al cargar la fuente: " << TTF_GetError() << endl;
+        SDL_DestroyRenderer(renderer);
         SDL_DestroyWindow(window);
         IMG_Quit();
         SDL_Quit();
@@ -487,9 +505,11 @@ void cleanup(SDL_Window* window, SDL_Renderer* renderer, Entity* player, Entity*
         SDL_DestroyTexture(background);
     }
     
+
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
 
     IMG_Quit();
     SDL_Quit();
+    TTF_Quit();
 }

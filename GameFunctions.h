@@ -5,7 +5,7 @@
 #include "Utils.h"
 
 // Inicializa SDL y crea la ventana/renderer
-bool init(SDL_Window* &window, SDL_Renderer* &renderer);
+bool init(SDL_Window* &window, SDL_Renderer* &renderer, TTF_Font* &font);
 
 // Función dedicada exclusivamente a posicionar los objetos (generar el mapa)
 void generateLevel(Entity* player, Entity* enemy, Obstacle obstacles[], Entity* hole);
