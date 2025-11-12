@@ -2,6 +2,7 @@
 #include "GameTypes.h"
 #include "GameFunctions.h"
 #include "GameMainMenu.h"
+#include "AudioHandler.h"
 
 using namespace std;
 
@@ -43,6 +44,8 @@ int main(int argc, char *argv[])
 
     cout << "Motor iniciado. Haz clic y arrastra para disparar." << endl;
     cout << "Llega al hoyo negro para ganar. Evita al Uncanny Cat." << endl;
+    
+    AudioHandler::getInstance().playSound("dep");
 
     // Game Loop
     while (g_gameState.isRunning)
