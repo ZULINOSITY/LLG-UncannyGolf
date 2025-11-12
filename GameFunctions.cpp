@@ -82,7 +82,7 @@ bool init(SDL_Window* &window, SDL_Renderer* &renderer, TTF_Font* &font) {
     AudioHandler& audio = AudioHandler::getInstance();
     if (audio.initialize()) {
         cout << "AudioHandler Inicializado." << endl;
-        AudioHandler::getInstance().setVolume(0.6f);
+        AudioHandler::getInstance().setVolume(0.2f);
     } else {
         cerr << "AudioHandler NO inicializado" << endl;
     }
