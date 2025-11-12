@@ -77,16 +77,6 @@ bool init(SDL_Window* &window, SDL_Renderer* &renderer, TTF_Font* &font) {
         return false;
     }
 
-    // Cargar la fuente
-    font = TTF_OpenFont("Assets/COMIC.TTF", 28);
-    if (!font) {
-        cerr << "Error al cargar la fuente: " << TTF_GetError() << endl;
-        SDL_DestroyRenderer(renderer);
-        SDL_DestroyWindow(window);
-        IMG_Quit();
-        SDL_Quit();
-        return false;
-    }
     
     cout << "Inicializando sistema de audio..." << endl;
     AudioHandler& audio = AudioHandler::getInstance();
@@ -185,7 +175,7 @@ void generateLevel(Entity* player, Entity* enemy, Obstacle obstacles[], Entity* 
     cout << "Nuevo mapa generado." << endl;
 }
 
-void loadMedia(SDL_Renderer* renderer, Entity* player, Entity* enemy, Obstacle obstacles[], Entity* hole, SDL_Texture* &background, SDL_Texture* &obstacleTexture) {
+void loadMedia(SDL_Renderer* renderer, Entity* player, Entity* enemy, Obstacle obstacles[], Entity* hole, SDL_Texture* &background, SDL_Texture* &obstacleTexture, TTF_Font* &font) {
     // Configurar dimensiones
     player->w = 50;
     player->h = 50;
@@ -242,6 +232,13 @@ void loadMedia(SDL_Renderer* renderer, Entity* player, Entity* enemy, Obstacle o
     hole->texture = loadTexture("Assets/hole.png", renderer); 
     if (hole->texture == nullptr) {
         cerr << "Error: No se pudo cargar 'hole.png'. El hoyo será un cuadrado negro." << endl;
+    }
+
+    // Cargar la fuente
+    font = TTF_OpenFont("Assets/COMIC.TTF", 28);
+    if (font == nullptr) {
+        cerr << "Error al cargar la fuente: COMIC.TTF" << TTF_GetError() << endl;
+        TTF_Quit();
     }
 
     //Inicializar la semilla aleatoria
@@ -459,7 +456,7 @@ void update(SDL_Window* window, GameState &state, Entity* player, Entity* enemy,
     }
 }
 
-void render(SDL_Renderer* renderer, const GameState &state, const Entity* player, const Entity* enemy, const Obstacle obstacles[], const Entity* hole, SDL_Texture* background) {
+void render(SDL_Renderer* renderer, const GameState &state, const Entity* player, const Entity* enemy, const Obstacle obstacles[], const Entity* hole, SDL_Texture* background, TTF_Font* &g_font) {
     
     // Si estamos en pantalla de muerte, mostrar solo la textura del enemigo en pantalla completa
     if (state.isDeathScene) {
@@ -549,6 +546,38 @@ void render(SDL_Renderer* renderer, const GameState &state, const Entity* player
         } else {
             SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
             SDL_RenderFillRect(renderer, &playerRenderRect);
+        }
+
+        // Esta parte es la linea para apuntar
+        if (state.isAiming) {
+            int playerCenterX = static_cast<int>(player->x + player->w / 2);
+            int playerCenterY = static_cast<int>(player->y + player->h / 2);
+
+            int pullDX = state.aimCurrentX - state.aimStartX;
+            int pullDY = state.aimCurrentY - state.aimStartY;
+
+            SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // RGBA
+            SDL_RenderDrawLine(renderer, 
+                playerCenterX,          
+                playerCenterY,          
+                playerCenterX - pullDX, 
+                playerCenterY - pullDY  
+            );
+        }
+
+        // Convertir el nivel a texto
+        string levelText = "Nivel: " + to_string(state.levelCount);
+        // Renderizar el texto
+        SDL_Color textColor = { 255, 255, 255, 255 };
+        SDL_Surface* textSurface = TTF_RenderText_Solid(g_font, levelText.c_str(), textColor);
+        if (textSurface) {
+            SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
+            if (textTexture) {
+                SDL_Rect textRect = { 10, 10, textSurface->w, textSurface->h };
+                SDL_RenderCopy(renderer, textTexture, NULL, &textRect);
+                SDL_DestroyTexture(textTexture);
+            }
+            SDL_FreeSurface(textSurface);
         }
 
         // Esta parte es la linea para apuntar

@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Ejecutar juego SDL2",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/juego.exe",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "MIMode": "gdb",
+            "miDebuggerPath": "C:/mingw64/bin/gdb.exe",
+            "externalConsole": true
+        }
+    ]
+}
