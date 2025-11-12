@@ -1,7 +1,6 @@
 #include <iostream>
 #include "GameTypes.h"
 #include "GameFunctions.h"
-#include "AudioHandler.h"
 
 using namespace std;
 
@@ -33,7 +32,6 @@ int main(int argc, char* argv[]) {
 
     // Cargar Media
     loadMedia(g_renderer, g_player, g_enemy, g_obstacles, g_hole, g_backgroundTexture, g_obstacleBaseTexture);
-    AudioHandler::getInstance().playSound("dep");
 
     // Game Loop
     while (g_gameState.isRunning) {

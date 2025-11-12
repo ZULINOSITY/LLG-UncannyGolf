@@ -38,6 +38,7 @@ struct Obstacle {
 struct GameState {
     bool isRunning = true;      // El game loop principal
     int levelCount = 1;         // Contador de niveles superados
+    int shootCount = 0;
     
     // Aqui empiezan las mecanicas del golf, y esta es una puta mierda asi que presta atención porque es dificil de explicar
     bool isAiming = false;      // Aca declaramos la variable que utilizaremos para saber si basicamente el jugador esta presionando el click para apuntar
