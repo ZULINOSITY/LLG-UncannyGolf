@@ -1,6 +1,7 @@
 #include "GameFunctions.h"
 #include "AudioHandler.h"
 #include <SDL2/SDL_image.h>
+#include <SDL2/SDL_ttf.h>
 #include <iostream>
 #include <cmath>
 #include <cstdlib> //Para rand() y srand()
@@ -12,7 +13,7 @@ using namespace std;
 int SCREEN_WIDTH = 800;
 int SCREEN_HEIGHT = 600;
 
-bool init(SDL_Window* &window, SDL_Renderer* &renderer) {
+bool init(SDL_Window* &window, SDL_Renderer* &renderer, TTF_Font* &font) {
     //Inicializa el sdl2, la verdad ni puta idea, pero todos los videos lo ponian
     
     // Tenemos que inicializar SDL_VIDEO y SDL_AUDIO
@@ -28,6 +29,18 @@ bool init(SDL_Window* &window, SDL_Renderer* &renderer) {
         SDL_Quit();
         return false;
     }
+
+    // inicializamos TTF
+    if (TTF_Init() != 0) {
+        cerr << "Error inicializando SDL_ttf: " << TTF_GetError() << endl;
+        return false;
+    }
+    // Inicializa SDL_Audio (Para Wav´s)
+    // AudioHandler& audio = AudioHandler::getInstance();
+    // if (!audio.initialize()){
+    //     cerr << "Error al Inicializa SDL_Audio. Averigua qué fué :)" << endl;
+    // }
+
 
     //El evento que crea la ventana donde se va a cargar el jueguito
     window = SDL_CreateWindow(
@@ -64,6 +77,18 @@ bool init(SDL_Window* &window, SDL_Renderer* &renderer) {
         return false;
     }
 
+    // Cargar la fuente
+    font = TTF_OpenFont("Assets/COMIC.TTF", 28);
+    if (!font) {
+        cerr << "Error al cargar la fuente: " << TTF_GetError() << endl;
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        IMG_Quit();
+        SDL_Quit();
+        return false;
+    }
+    
+    cout << "Inicializando sistema de audio..." << endl;
     AudioHandler& audio = AudioHandler::getInstance();
     if (audio.initialize()) {
         cout << "AudioHandler Inicializado." << endl;
@@ -536,9 +561,11 @@ void cleanup(SDL_Window* window, SDL_Renderer* renderer, Entity* player, Entity*
         SDL_DestroyTexture(background);
     }
     
+
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
 
     IMG_Quit();
     SDL_Quit();
+    TTF_Quit();
 }

@@ -2,6 +2,7 @@
 #define GAMETYPES_H
 
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
 
 // --- Constantes Globales ---
 
@@ -17,6 +18,14 @@ const float ENEMY_SPEED = 0.5f;        // Velocidad de persecución del enemigo
 const int NUM_OBSTACLES = 40;          // Cantidad de obstáculos
 
 // --- Estructuras de Datos ---
+
+// Enum para las escenas del juego
+enum class Scene
+{
+    MAIN_MENU,
+    GAMEPLAY
+};
+
 
 // Renombramos Player a Entity, ya que ahora tendremos dos
 struct Entity {
@@ -39,6 +48,8 @@ struct GameState {
     bool isRunning = true;      // El game loop principal
     int levelCount = 1;         // Contador de niveles superados
     int shootCount = 0;
+    
+    Scene currentScene = Scene::MAIN_MENU; // Escena actual del juego
     
     // Aqui empiezan las mecanicas del golf, y esta es una puta mierda asi que presta atención porque es dificil de explicar
     bool isAiming = false;      // Aca declaramos la variable que utilizaremos para saber si basicamente el jugador esta presionando el click para apuntar
