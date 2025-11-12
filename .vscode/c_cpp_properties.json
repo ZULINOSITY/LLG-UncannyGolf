@@ -5,15 +5,19 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/SDL2-2.32.10/x86_64-w64-mingw32/include",
+                "${workspaceFolder}/SDL2-2.32.10/x86_64-w64-mingw32/include/SDL2",
+                "${workspaceFolder}/SDL2-2.32.10/x86_64-w64-mingw32/lib",
                 "${workspaceFolder}/SDL2_image-2.8.8/x86_64-w64-mingw32/include",
-                "${workspaceFolder}/SDL2-2.32.10/x86_64-w64-mingw32/include/SDL2"
+                "${workspaceFolder}/SDL2_image-2.8.8/x86_64-w64-mingw32/lib",
+                "${workspaceFolder}/SDL2_ttf-2.22.0/x86_64-w64-mingw32/include",
+                "${workspaceFolder}/SDL2_ttf-2.22.0/x86_64-w64-mingw32/lib"
             ],
             "defines": [
                 "_DEBUG",
                 "UNICODE",
                 "_UNICODE"
             ],
-            "compilerPath": "C:/TDM-GCC-64/bin/g++.exe",
+            "compilerPath": "C:/mingw64/bin/g++.exe",
             "cStandard": "c17",
             "cppStandard": "c++17",
             "intelliSenseMode": "windows-gcc-x64"
