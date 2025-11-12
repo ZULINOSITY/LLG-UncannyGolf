@@ -115,33 +115,42 @@ void AudioHandler::audioCallback(void* userdata, Uint8* stream, int len) {
     AudioHandler* handler = static_cast<AudioHandler*>(userdata);
     handler->mixAudio(stream, len);
 }
+
 void AudioHandler::mixAudio(Uint8* stream, int len) {
+    // Limpiar el stream
     SDL_memset(stream, 0, len);
     
     if (playingSounds.empty()) return;
     
+    // Para cada sonido en la lista de reproducción
     for (auto it = playingSounds.begin(); it != playingSounds.end();) {
         const AudioClip* clip = it->first;
         Uint32& position = it->second;
         
+        // Calcular cuánto queda por reproducir
         Uint32 remaining = clip->length - position;
+        
         if (remaining == 0) {
+            // Sonido terminado, remover
             it = playingSounds.erase(it);
             continue;
         }
         
+        // Calcular cuánto mezclar en este frame
         Uint32 mixLength = (remaining < static_cast<Uint32>(len)) ? remaining : len;
         
         if (mixLength > 0) {
+            // MEZCLA DIRECTA Y ACUMULATIVA - clave para múltiples sonidos
             SDL_MixAudioFormat(stream, 
                               clip->buffer + position, 
-                              AUDIO_S16, 
+                              clip->spec.format, 
                               mixLength, 
                               static_cast<int>(volume * SDL_MIX_MAXVOLUME));
             
             position += mixLength;
         }
         
+        // Verificar si el sonido terminó
         if (position >= clip->length) {
             it = playingSounds.erase(it);
         } else {
